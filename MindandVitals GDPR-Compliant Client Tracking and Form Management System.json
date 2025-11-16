@@ -1,0 +1,1188 @@
+{
+  "name": "MindandVitals GDPR-Compliant Client Tracking and Form Management System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tidycal-booking",
+        "options": {}
+      },
+      "id": "e895365d-45ed-4d5b-a3d2-30902186ed15",
+      "name": "TidyCal Booking Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -48,
+        32
+      ],
+      "webhookId": "73125e42-b62a-4361-a291-7594a5adb6ea"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "deftformIntakeUrl",
+              "value": "<__PLACEHOLDER_VALUE__Deftform intake form URL__>",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "therapistEmail",
+              "value": "<__PLACEHOLDER_VALUE__Therapist email address__>",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "googleSheetId",
+              "value": "<__PLACEHOLDER_VALUE__Google Sheet ID__>",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "03f983f1-8458-4fca-94be-9b6a4e431f61",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const clientId = 'MV-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();\nreturn { json: { ...item.json, clientId } };"
+      },
+      "id": "e8ed038c-49be-4b76-b0f2-9db46c3ee388",
+      "name": "Generate ClientID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').item.json.googleSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Client Mapping"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "ClientID"
+          ],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "d653ebd5-bdc2-4f51-8089-1467d03ce634",
+      "name": "Save to Client Mapping Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        32
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1doApqDQ1sLe3NBv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "Welcome to MindandVitals - Please Complete Your Intake Form",
+        "message": "=Hello {{ $json.name }},<br><br>Thank you for booking with MindandVitals. Please complete your intake form before your appointment:<br><br><a href=\"{{ $('Workflow Configuration').item.json.deftformIntakeUrl }}?clientId={{ $json.clientId }}\">Complete Intake Form</a><br><br>Your reference ID is: {{ $json.clientId }}<br><br>Best regards,<br>MindandVitals Team",
+        "options": {}
+      },
+      "id": "c2ac12a2-b26a-4fa0-b09c-7a7641d21eea",
+      "name": "Send Intake Form Email to Client",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        848,
+        32
+      ],
+      "webhookId": "1a6e2708-6924-4af0-83b6-a765c4539eed",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "USLq7Ts21uuHLx93",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "deftform-submission",
+        "options": {}
+      },
+      "id": "55fd670f-7e20-4414-b13e-d84124bedabf",
+      "name": "Deftform Submission Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -48,
+        304
+      ],
+      "webhookId": "ad12d867-4e0d-4586-a3a2-ff4e536fe32c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "clientId",
+              "value": "={{ $json.body.clientId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "email",
+              "value": "={{ $json.body.email || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "formType",
+              "value": "={{ $json.body.formType || 'intake' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "sleepScore",
+              "value": "={{ $json.body.sleepScore || null }}",
+              "type": "number"
+            },
+            {
+              "id": "id-6",
+              "name": "stressScore",
+              "value": "={{ $json.body.stressScore || null }}",
+              "type": "number"
+            },
+            {
+              "id": "id-7",
+              "name": "moodScore",
+              "value": "={{ $json.body.moodScore || null }}",
+              "type": "number"
+            },
+            {
+              "id": "id-8",
+              "name": "focusScore",
+              "value": "={{ $json.body.focusScore || null }}",
+              "type": "number"
+            },
+            {
+              "id": "id-9",
+              "name": "consent",
+              "value": "={{ $json.body.consent || false }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "532c9936-cd49-44cb-bb2c-d877b6f604a3",
+      "name": "Extract Submission Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $('Extract Submission Data').item.json.clientId }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a8295ad1-17f1-45ee-9c6d-93ff7e620125",
+      "name": "Check if ClientID Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').item.json.googleSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Client Mapping"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Email",
+              "lookupValue": "={{ $json.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4daec74a-585c-40e4-b7dc-32451aaa9cec",
+      "name": "Lookup ClientID by Email",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        256
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1doApqDQ1sLe3NBv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $('Lookup ClientID by Email').item.json.ClientID }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "227e76e3-6bf5-4d19-9e49-9dcec3497441",
+      "name": "Check if ClientID Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "clientId",
+              "value": "={{ $json.clientId || $json.ClientID }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "formType",
+              "value": "={{ $json.formType }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "sleepScore",
+              "value": "={{ $json.sleepScore }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "stressScore",
+              "value": "={{ $json.stressScore }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "moodScore",
+              "value": "={{ $json.moodScore }}",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "focusScore",
+              "value": "={{ $json.focusScore }}",
+              "type": "string"
+            },
+            {
+              "id": "id-8",
+              "name": "consent",
+              "value": "={{ $json.consent }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "5a9cc862-34dc-49c4-aea4-fe01f98aff88",
+      "name": "Prepare Response Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').item.json.googleSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Responses"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": null
+        },
+        "options": {}
+      },
+      "id": "2fd972bd-184b-4191-8442-dd617eca014e",
+      "name": "Save to Responses Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1296,
+        256
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1doApqDQ1sLe3NBv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').item.json.googleSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Unmatched"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": null
+        },
+        "options": {}
+      },
+      "id": "dcd3068e-a269-4059-aa29-43061fc92ad5",
+      "name": "Save to Unmatched Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1072,
+        448
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1doApqDQ1sLe3NBv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Workflow Configuration').item.json.therapistEmail }}",
+        "subject": "Alert: Unmatched Form Submission",
+        "message": "=A form submission was received but could not be matched to a ClientID.<br><br>Email: {{ $json.email }}<br>Form Type: {{ $json.formType }}<br>Timestamp: {{ $json.timestamp }}<br><br>Please review the Unmatched sheet.",
+        "options": {}
+      },
+      "id": "b1003c1d-a284-4c34-a9de-adeef750d757",
+      "name": "Alert Therapist - Unmatched Submission",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1296,
+        448
+      ],
+      "webhookId": "dc79d6ba-659a-4bf0-a4ff-edfd23ac9879",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "USLq7Ts21uuHLx93",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').item.json.googleSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Responses"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "clientId",
+              "lookupValue": "={{ $json.clientId }}"
+            }
+          ]
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically"
+            }
+          }
+        }
+      },
+      "id": "b82a33c1-102c-46eb-94a3-b48bcf3d59b1",
+      "name": "Get Previous Submission",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1520,
+        256
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1doApqDQ1sLe3NBv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nif (items.length < 2) {\n  return [{ json: { summary: 'No previous submission to compare' } }];\n}\n\nconst current = items[0].json;\nconst previous = items[1].json;\n\nconst domains = ['sleepScore', 'stressScore', 'moodScore', 'focusScore'];\nlet summary = [];\n\ndomains.forEach(domain => {\n  const curr = parseFloat(current[domain]) || 0;\n  const prev = parseFloat(previous[domain]) || 0;\n  const diff = curr - prev;\n  \n  if (diff !== 0) {\n    const label = domain.replace('Score', '');\n    summary.push(`${label} ${diff > 0 ? '+' : ''}${diff}`);\n  }\n});\n\nreturn [{ json: {\n  clientId: current.clientId,\n  summary: summary.join(', ') || 'No changes',\n  currentScores: {\n    sleep: current.sleepScore,\n    stress: current.stressScore,\n    mood: current.moodScore,\n    focus: current.focusScore\n  }\n} }];"
+      },
+      "id": "4fc774cc-3ddb-4582-a429-e41233979a30",
+      "name": "Compare Scores and Generate Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Workflow Configuration').item.json.therapistEmail }}",
+        "subject": "=Client Progress Summary - {{ $json.clientId }}",
+        "message": "=New submission received for ClientID: {{ $json.clientId }}<br><br><strong>Score Changes:</strong><br>{{ $json.summary }}<br><br><strong>Current Scores:</strong><br>Sleep: {{ $json.currentScores.sleep }}<br>Stress: {{ $json.currentScores.stress }}<br>Mood: {{ $json.currentScores.mood }}<br>Focus: {{ $json.currentScores.focus }}",
+        "options": {}
+      },
+      "id": "c5ee8f15-4a82-4fd2-b4c5-80564ce91afc",
+      "name": "Send Summary to Therapist",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1968,
+        256
+      ],
+      "webhookId": "6ef6c520-05c9-49f4-aaaf-4e589053bbbe",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "USLq7Ts21uuHLx93",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "047b08a3-c3aa-4fcf-ad28-550cdfbf116c",
+      "name": "Daily Reminder Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -48,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "url": "<__PLACEHOLDER_VALUE__TidyCal API endpoint for appointments__>",
+        "options": {}
+      },
+      "id": "481c2606-a768-4217-a49b-fc53fa2ba2f0",
+      "name": "Get Upcoming Appointments from TidyCal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        176,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);\nconst twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);\n\nconst filtered = $input.all().filter(item => {\n  const apptDate = new Date(item.json.appointmentDate);\n  return apptDate >= oneDayFromNow && apptDate <= twoDaysFromNow;\n});\n\nreturn filtered;"
+      },
+      "id": "b8f1b927-e55c-4c57-af03-46d63525a26d",
+      "name": "Filter Appointments 1-2 Days Away",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').item.json.googleSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Responses"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "clientId",
+              "lookupValue": "={{ $json.clientId }}"
+            }
+          ]
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically"
+            }
+          },
+          "returnFirstMatch": true
+        }
+      },
+      "id": "d0992265-bea3-429c-8b64-4b7da959add4",
+      "name": "Check Recent Submissions",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        672
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1doApqDQ1sLe3NBv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $('Check Recent Submissions').all().length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a89be104-d9bd-4ffb-9e52-a42f9d14d385",
+      "name": "Check if Submission Missing",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "Reminder: Complete Your Intake Form Before Your Appointment",
+        "message": "=Hello {{ $json.name }},<br><br>Your appointment with MindandVitals is coming up soon. Please complete your intake form if you haven't already:<br><br><a href=\"{{ $('Workflow Configuration').item.json.deftformIntakeUrl }}?clientId={{ $json.clientId }}\">Complete Intake Form</a><br><br>Your reference ID is: {{ $json.clientId }}<br><br>Best regards,<br>MindandVitals Team",
+        "options": {}
+      },
+      "id": "1b15a9a4-ba55-442a-989e-67e95d718f19",
+      "name": "Send Reminder Email to Client",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1072,
+        672
+      ],
+      "webhookId": "990d9f39-3f72-476e-9799-3b58ab6c6efd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "USLq7Ts21uuHLx93",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').item.json.googleSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Reminders Log"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": null
+        },
+        "options": {}
+      },
+      "id": "44828b46-b4fd-4ff9-8aa2-37ad227cc648",
+      "name": "Log Reminder Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1296,
+        672
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1doApqDQ1sLe3NBv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gdpr-delete",
+        "options": {}
+      },
+      "id": "bacff6dc-4436-475e-b559-4118a759a12a",
+      "name": "GDPR Deletion Request Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -48,
+        896
+      ],
+      "webhookId": "6339590d-0056-47e8-a780-325b7a3fb080"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').item.json.googleSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Responses"
+        }
+      },
+      "id": "bc473e6b-8af7-4624-8c90-1f78841d4bc4",
+      "name": "Delete from Responses Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        176,
+        896
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1doApqDQ1sLe3NBv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').item.json.googleSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Client Mapping"
+        }
+      },
+      "id": "cacb8070-d628-4522-b6d0-1ab097a1c7e9",
+      "name": "Delete from Client Mapping Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        400,
+        896
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1doApqDQ1sLe3NBv",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"All data for ClientID {{ $('GDPR Deletion Request Webhook').item.json.body.clientId }} has been deleted\"\n}",
+        "options": {}
+      },
+      "id": "130ba2f0-e593-4265-8824-b0ae055b5f1e",
+      "name": "Confirm Deletion",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        624,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtHour": 2
+            }
+          ]
+        }
+      },
+      "id": "3c3c5dcc-d0f8-4df5-b2ee-05f66a7e8e0d",
+      "name": "Monthly Cleanup Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -48,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const fiveYearsAgo = new Date();\nfiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);\nreturn [{ json: { cutoffDate: fiveYearsAgo.toISOString() } }];"
+      },
+      "id": "0f5d56b4-e653-4e0d-a2cf-1baaea936de5",
+      "name": "Calculate 5 Year Cutoff Date",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').item.json.googleSheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Responses"
+        }
+      },
+      "id": "76237ddf-4ff1-4aee-813a-3fbdec05e65b",
+      "name": "Delete Old Responses",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        400,
+        1120
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1doApqDQ1sLe3NBv",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "TidyCal Booking Webhook": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Generate ClientID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate ClientID": {
+      "main": [
+        [
+          {
+            "node": "Save to Client Mapping Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Client Mapping Sheet": {
+      "main": [
+        [
+          {
+            "node": "Send Intake Form Email to Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deftform Submission Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Submission Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Submission Data": {
+      "main": [
+        [
+          {
+            "node": "Check if ClientID Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if ClientID Exists": {
+      "main": [
+        [
+          {
+            "node": "Prepare Response Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lookup ClientID by Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup ClientID by Email": {
+      "main": [
+        [
+          {
+            "node": "Check if ClientID Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if ClientID Found": {
+      "main": [
+        [
+          {
+            "node": "Prepare Response Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save to Unmatched Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Response Data": {
+      "main": [
+        [
+          {
+            "node": "Save to Responses Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Unmatched Sheet": {
+      "main": [
+        [
+          {
+            "node": "Alert Therapist - Unmatched Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Responses Sheet": {
+      "main": [
+        [
+          {
+            "node": "Get Previous Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Previous Submission": {
+      "main": [
+        [
+          {
+            "node": "Compare Scores and Generate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Scores and Generate Summary": {
+      "main": [
+        [
+          {
+            "node": "Send Summary to Therapist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Reminder Check": {
+      "main": [
+        [
+          {
+            "node": "Get Upcoming Appointments from TidyCal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Upcoming Appointments from TidyCal": {
+      "main": [
+        [
+          {
+            "node": "Filter Appointments 1-2 Days Away",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Appointments 1-2 Days Away": {
+      "main": [
+        [
+          {
+            "node": "Check Recent Submissions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Recent Submissions": {
+      "main": [
+        [
+          {
+            "node": "Check if Submission Missing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Submission Missing": {
+      "main": [
+        [
+          {
+            "node": "Send Reminder Email to Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reminder Email to Client": {
+      "main": [
+        [
+          {
+            "node": "Log Reminder Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GDPR Deletion Request Webhook": {
+      "main": [
+        [
+          {
+            "node": "Delete from Responses Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete from Responses Sheet": {
+      "main": [
+        [
+          {
+            "node": "Delete from Client Mapping Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete from Client Mapping Sheet": {
+      "main": [
+        [
+          {
+            "node": "Confirm Deletion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monthly Cleanup Schedule": {
+      "main": [
+        [
+          {
+            "node": "Calculate 5 Year Cutoff Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate 5 Year Cutoff Date": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "35d16399-8e6d-4bc3-b6a6-cff5aac5653b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0d73cda46cb793c45c59dbab4f03ad13b919b02b9f9c518722c154296071205a"
+  },
+  "id": "ibDhwPV5tqyVtneJ",
+  "tags": []
+}
